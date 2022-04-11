@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/consumers/psql/database/struct.go" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/consumers/psql/sql/migrate-up.sql" dialect="PostgreSQL" />
+  </component>
+</project>

@@ -1,0 +1,126 @@
+version: '3.3'
+
+services:
+  publisher:
+    container_name: 'publisher'
+    build: publisher/
+
+    environment:
+       # API
+       API_KEY: b62ffea127d9eeedf1d07c4f6d0439a2 # http://api.currencylayer.com
+       API_EVERY: 60 # update currencies every 60 seconds
+
+       # RabbitMQ
+       RABBITMQ_USERNAME: guest
+       RABBITMQ_PASSWORD: guest
+       RABBITMQ_HOST: rabbitmq
+       RABBITMQ_PORT: 5672
+
+    depends_on:
+      - rabbitmq
+    networks:
+      hosts:
+
+  consumer-redis:
+    container_name: 'consumer-redis'
+    build: consumers/redis
+    ports:
+      - "8080:8080"
+    environment:
+
+       # Redis
+       REDIS_DATABASE: 0
+       REDIS_ADDRESS: redis:6379
+       REDIS_PASSWORD: mafmaOioaoFoAWFnianwifn
+
+       # Api endpoint (for '/get')
+       API_PORT: 8080
+
+       # RabbitMQ
+       RABBITMQ_USERNAME: guest
+       RABBITMQ_PASSWORD: guest
+       RABBITMQ_HOST: rabbitmq
+       RABBITMQ_PORT: 5672
+
+    networks:
+      - hosts
+    depends_on:
+      - publisher
+      - redis
+      - rabbitmq
+
+  consumer-psql:
+    container_name: 'consumer-psql'
+    build: consumers/psql
+
+    environment:
+
+      # Postgres
+      POSTGRES_USER: server
+      POSTGRES_PASSWORD: M5F3wWtFxkQ8Ra4n
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5433
+      POSTGRES_DATABASE: history
+
+
+      # RabbitMQ
+      RABBITMQ_QUEUE_NAME: currs
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+
+    networks:
+      - hosts
+    depends_on:
+      - publisher
+      - postgres
+      - rabbitmq
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: 'rabbitmq'
+    ports:
+      - 15672:15672
+    networks:
+      - hosts
+
+  redis:
+    image: "redis:latest"
+    restart: always
+    command: redis-server --requirepass mafmaOioaoFoAWFnianwifn
+    environment:
+
+       REDIS_REPLICATION_MODE: master
+    networks:
+      hosts:
+
+
+
+  postgres:
+    image: 'postgres:latest'
+
+    restart: always
+
+    volumes:
+      - "./consumers/psql/sql/migrate-up.sql:/docker-entrypoint-initdb.d/migrate-up.sql"
+
+    ports:
+      - "5433:5433"
+
+    networks:
+      - hosts
+
+    environment:
+      POSTGRES_DB: history
+      PGPORT: 5433
+      POSTGRES_USER: server
+      POSTGRES_PASSWORD: M5F3wWtFxkQ8Ra4n
+
+
+networks:
+  hosts:
+    driver: "bridge"
+volumes:
+  data:
